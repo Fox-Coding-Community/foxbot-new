@@ -16,13 +16,11 @@ module.exports = {
     devOnly: false,
     cooldown: '5s',
     async execute(client, interaction) {
-        if (
-            interaction.user.id !==
-            config.developers.includes(interaction.user.id)
-        )
+        if (!config.developers.includes(interaction.user.id)) {
             return interaction.editReply(
                 '> :x: You do not have permission to use this command.'
             );
+        }
 
         let embed = new EmbedBuilder()
             .setColor('#bf492d')
