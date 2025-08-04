@@ -71,7 +71,7 @@ const loadPunishments = async (client) => {
                 // Delete the punishment record from the database
                 await Punishments.deleteOne({ userId: member.user.id });
 
-                const logChannelId = await getLogChannelId(interaction.guild.id);
+                const logChannelId = await getLogChannelId("300481238773399553");
             const logChannel = logChannelId ? await client.channels.fetch(logChannelId) : null;
 
             const removeEmbed = new EmbedBuilder()

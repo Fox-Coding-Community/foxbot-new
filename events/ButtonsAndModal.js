@@ -6,36 +6,36 @@ const {
     TextInputBuilder,
     TextInputStyle,
     ActionRowBuilder,
-} = require('discord.js');
+} = require("discord.js");
 
-const Vacation = require('../models/Vacation');
-const LogChannel = require('../models/LogChannel');
+const Vacation = require("../models/Vacation");
+const LogChannel = require("../models/LogChannel");
 
-const vacationRoleId = '1137097373559038045';
+const vacationRoleId = "1137097373559038045";
 const rolesToRemove = [
-    '1270778782822957057',
-    '855055867775025152',
-    '1169640736262717471',
-    '1270779316246155316',
-    '327989761677590530',
-    '1169002700281757751',
-    '1270779676729806919',
-    '1068501587846246450',
-    '1169639127789092895',
-    '1270780308341657660',
-    '378659419652751363',
-    '1169283299013820526',
-    '451665764936712192',
-    '1197467231962025984',
-    '460539606971187200',
-    '1213597128841232950',
-    '1183154616465104997',
-    '1063072755802714112',
-    '1213113479599493120',
-    '1119120674087239732',
-    '1262705542972047370',
-    '1270779316246155316',
-    '1213597128841232395',
+    "1270778782822957057",
+    "855055867775025152",
+    "1169640736262717471",
+    "1270779316246155316",
+    "327989761677590530",
+    "1169002700281757751",
+    "1270779676729806919",
+    "1068501587846246450",
+    "1169639127789092895",
+    "1270780308341657660",
+    "378659419652751363",
+    "1169283299013820526",
+    "451665764936712192",
+    "1197467231962025984",
+    "460539606971187200",
+    "1213597128841232950",
+    "1183154616465104997",
+    "1063072755802714112",
+    "1213113479599493120",
+    "1119120674087239732",
+    "1262705542972047370",
+    "1270779316246155316",
+    "1213597128841232395",
 ];
 
 // Helper function to chunk the roles
@@ -44,13 +44,13 @@ function chunkRoles(roleIds, guild) {
     return roles
         .filter((role) => role)
         .map((role) => `<@&${role.id}>`)
-        .join(', ');
+        .join(", ");
 }
 
 // Helper function to set a user on vacation
 async function setVacation(client, interaction) {
-    const durationDays = interaction.fields.getTextInputValue('duration');
-    const reason = interaction.fields.getTextInputValue('reason');
+    const durationDays = interaction.fields.getTextInputValue("duration");
+    const reason = interaction.fields.getTextInputValue("reason");
     const user = interaction.user;
     const executor = interaction.member;
 
@@ -61,14 +61,14 @@ async function setVacation(client, interaction) {
             !executor.permissions.has(PermissionsBitField.Flags.Administrator)
         ) {
             return interaction.editReply(
-                '> :x: You do not have permission to put others on vacation.'
+                "> :x: You do not have permission to put others on vacation."
             );
         }
 
         const targetMember = await interaction.guild.members.fetch(user.id);
         if (!targetMember || !targetMember.roles.cache.has(client.staffRole)) {
             return interaction.editReply(
-                '> :x: The target user does not have the staff role and cannot be put on vacation.'
+                "> :x: The target user does not have the staff role and cannot be put on vacation."
             );
         }
     }
@@ -76,13 +76,13 @@ async function setVacation(client, interaction) {
     // Check if the user is already on vacation
     const existingVacation = await Vacation.findOne({ userId: user.id });
     if (existingVacation) {
-        return interaction.editReply('> :x: This user is already on vacation!');
+        return interaction.editReply("> :x: This user is already on vacation!");
     }
 
     // Validate vacation duration
     if (durationDays < 2 || durationDays > 30) {
         return interaction.editReply(
-            '> :x: The vacation duration must be between 2 and 30 days!'
+            "> :x: The vacation duration must be between 2 and 30 days!"
         );
     }
 
@@ -117,16 +117,16 @@ async function setVacation(client, interaction) {
 
     const embed = new EmbedBuilder()
         .setAuthor({
-            name: 'Vacation',
+            name: "Vacation",
             iconURL: `${client.user.displayAvatarURL({ dynamic: true })}`,
         })
         .setColor(client.color)
         .setThumbnail(interaction.guild.iconURL({ dynamic: true, size: 1024 }))
         .addFields(
-            { name: 'User', value: `${user}`, inline: true },
-            { name: 'Duration', value: `${durationDays} days`, inline: true },
-            { name: 'Reason', value: `${reason}`, inline: true },
-            { name: 'Removed Roles', value: roleMentions, inline: false }
+            { name: "User", value: `${user}`, inline: true },
+            { name: "Duration", value: `${durationDays} days`, inline: true },
+            { name: "Reason", value: `${reason}`, inline: true },
+            { name: "Removed Roles", value: roleMentions, inline: false }
         )
         .setFooter({
             text: `Requested by ${interaction.user.username}`,
@@ -146,7 +146,7 @@ async function setVacation(client, interaction) {
 }
 
 module.exports = {
-    event: 'interactionCreate',
+    event: "interactionCreate",
     /**
      *
      * @param {Client} client
@@ -156,24 +156,24 @@ module.exports = {
     run: async (client, interaction) => {
         try {
             if (interaction.isButton()) {
-                if (interaction.customId === 'vacset_apply') {
+                if (interaction.customId === "vacset_apply") {
                     let modal = new ModalBuilder()
-                        .setCustomId('vacset_apply_modal')
-                        .setTitle('Set Vacation');
+                        .setCustomId("vacset_apply_modal")
+                        .setTitle("Set Vacation");
 
                     let duration = new TextInputBuilder()
-                        .setCustomId('duration')
-                        .setLabel('Duration')
-                        .setPlaceholder('2 to 30 Days')
+                        .setCustomId("duration")
+                        .setLabel("Duration")
+                        .setPlaceholder("2 to 30 Days")
                         .setMinLength(1)
                         .setMaxLength(2)
                         .setRequired(true)
                         .setStyle(TextInputStyle.Short);
 
                     let reason = new TextInputBuilder()
-                        .setCustomId('reason')
-                        .setLabel('Reason')
-                        .setPlaceholder('Reason')
+                        .setCustomId("reason")
+                        .setLabel("Reason")
+                        .setPlaceholder("Reason")
                         .setRequired(true)
                         .setStyle(TextInputStyle.Paragraph);
 
@@ -185,11 +185,11 @@ module.exports = {
                     await interaction.showModal(modal);
                 }
             } else if (interaction.isModalSubmit()) {
-                if (interaction.customId === 'vacset_apply_modal') {
+                if (interaction.customId === "vacset_apply_modal") {
                     await interaction.deferReply({ ephemeral: true });
 
                     const duration =
-                        interaction.fields.getTextInputValue('duration');
+                        interaction.fields.getTextInputValue("duration");
 
                     if (isNaN(duration))
                         return interaction.editReply({
@@ -206,19 +206,19 @@ module.exports = {
                     if (duration > 30)
                         return interaction.editReply({
                             content:
-                                '> :x: You can only set vacation for 30 days!',
+                                "> :x: You can only set vacation for 30 days!",
                             ephemeral: true,
                         });
 
                     const reason =
-                        interaction.fields.getTextInputValue('reason');
+                        interaction.fields.getTextInputValue("reason");
 
                     return await setVacation(client, interaction);
                 }
             }
         } catch (error) {
             console.error(
-                'Error handling guildMemberUpdate for role changes:',
+                "Error handling guildMemberUpdate for role changes:",
                 error
             );
         }
@@ -242,19 +242,19 @@ module.exports = {
                         const guild =
                             client.guilds.cache.get(guildId) ||
                             (await client.guilds.fetch(guildId));
-                        if (!guild) throw new Error('Guild not found!');
+                        if (!guild) throw new Error("Guild not found!");
 
                         const member = await guild.members.fetch(userId);
                         return member;
                     } catch (error) {
-                        console.error('Error fetching member:', error);
+                        console.error("Error fetching member:", error);
                         return null;
                     }
                 }
 
                 const targetMember = await getMember(
                     client,
-                    '300481238773399553',
+                    "300481238773399553",
                     vacation.userId
                 );
 
@@ -264,22 +264,24 @@ module.exports = {
                 }
                 await Vacation.deleteOne({ userId: vacation.userId });
                 if (vacation_channel) {
+                    const member = await guild.members.fetch(userId);
+
                     const embed = new EmbedBuilder()
-                        .setColor('Green')
+                        .setColor("Green")
                         .setAuthor({
-                            name: 'Vacation Ended',
+                            name: "Vacation Ended",
                             iconURL: `${client.user.displayAvatarURL({
                                 dynamic: true,
                             })}`,
                         })
                         .addFields(
                             {
-                                name: 'Member',
+                                name: "Member",
                                 value: `<@${vacation.userId}>`,
                                 inline: true,
                             },
                             {
-                                name: 'Reason',
+                                name: "Reason",
                                 value: `Vacation Ended`,
                                 inline: true,
                             }
