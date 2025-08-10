@@ -5,7 +5,6 @@ const userMessageCountSchema = new mongoose.Schema({
     staffRole: { type: Boolean, default: false },
     eventRole: { type: Boolean, default: false },
     staffMessage: { type: Number, default: 0 },
-    eventMessage: { type: Number, default: 0 },
     staffPoint: { type: Number, default: 0 },
     eventPoint: { type: Number, default: 0 },
     lastUpdated: { type: Number, default: Date.now() },

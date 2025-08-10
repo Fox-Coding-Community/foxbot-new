@@ -1,122 +1,130 @@
+const { EmbedBuilder } = require("discord.js");
 const UserMessageCount = require("../models/UserMessageCount");
 
-const staffChats = [
-    "709547829026095195",
-    "701143969681375354",
-    "378644933587894282",
-    "1316063307232182353",
-    "1233883853207244871",
-    "678329543135592458",
-    "1097140153581043813",
-    "1260185769985708144",
-    "362730500088922132",
-    "358595350476357632",
-    "1106627748904058930",
-    "1050116464801239153",
-    "1234825002680057866",
-    "300481238773399553",
-];
-
-const eventChats = [
-    "943403242887454720",
-    "1254894014226759840",
-    "943265102340169789",
-    "709547829026095195",
-];
+const registerationChannel = "1322391034545700874";
+const registerationLogChannel = "1322391839998738502";
 
 module.exports = {
     event: "messageCreate",
     run: async (client, message) => {
-        if (message.author.bot) return;
+        if (message.author.bot || !message.guild || !message.member) return;
 
-        const member = message.member;
+        const { member, author, channel, content } = message;
 
-        // Check for both staffRole and eventRole first
+        // --- Staff message tracking ---
+        if (member.roles.cache.has(client.staffRole)) {
+            let userData = await UserMessageCount.findOne({
+                userId: author.id,
+            });
+
+            if (!userData) {
+                userData = await UserMessageCount.create({
+                    userId: author.id,
+                    staffRole: true,
+                    staffMessage: 0,
+                    staffPoint: 0,
+                    lastUpdated: Date.now(),
+                });
+            }
+
+            userData.staffMessage += 1;
+            userData.staffPoint += 1 / 2000;
+            userData.lastUpdated = Date.now();
+            await userData.save();
+        }
+
+        // --- Event message tracking ---
         if (
-            member.roles.cache.some((role) => role.id === client.staffRole) &&
-            member.roles.cache.some((role) => role.id === client.eventRole)
+            channel.id === registerationChannel &&
+            member.roles.cache.has(client.eventRole)
         ) {
-            if (
-                staffChats.includes(message.channel.id) ||
-                eventChats.includes(message.channel.id)
-            ) {
-                let userData = await UserMessageCount.findOne({
-                    userId: message.author.id,
+            let userData = await UserMessageCount.findOne({
+                userId: author.id,
+            });
+
+            if (!userData) {
+                userData = await UserMessageCount.create({
+                    userId: author.id,
+                    eventRole: true,
+                    eventPoint: 0,
+                    lastUpdated: Date.now(),
                 });
-
-                if (!userData) {
-                    userData = new UserMessageCount({
-                        userId: message.author.id,
-                        staffRole: true,
-                        eventRole: true,
-                        staffMessage: 0,
-                        eventMessage: 0,
-                        staffPoint: 0,
-                        eventPoint: 0,
-                        lastUpdated: Date.now(),
-                    });
-                }
-
-                if (staffChats.includes(message.channel.id)) {
-                    userData.staffMessage++;
-                    userData.staffPoint += 1 / 3000;
-                }
-
-                if (eventChats.includes(message.channel.id)) {
-                    userData.eventMessage++;
-                    userData.eventPoint += 1 / 3000;
-                }
-
-                userData.lastUpdated = Date.now();
-                await userData.save();
             }
-        } else if (
-            member.roles.cache.some((role) => role.id === client.staffRole)
-        ) {
-            // Staff role only
-            if (staffChats.includes(message.channel.id)) {
-                let userData = await UserMessageCount.findOne({
-                    userId: message.author.id,
-                });
 
-                if (!userData) {
-                    userData = new UserMessageCount({
-                        userId: message.author.id,
-                        staffRole: true,
-                        staffMessage: 0,
-                        staffPoint: 0,
-                        lastUpdated: Date.now(),
-                    });
+            const pointKeywords = [
+                {
+                    keyword: "سويت",
+                    value: 0.1668,
+                    roles: ["1183154616465104997", "1063072755802714112"],
+                },
+                { keyword: "ساعدت", value: 0.1336 },
+                { keyword: "تبرعت", value: 0.0668 },
+            ];
+
+            let awarded = [];
+
+            for (const { keyword, value, roles } of pointKeywords) {
+                if (content.includes(keyword)) {
+                    if (
+                        roles &&
+                        !roles.some((roleId) => member.roles.cache.has(roleId))
+                    )
+                        continue;
+
+                    userData.eventPoint += value;
+                    awarded.push({ keyword, value });
                 }
-
-                userData.staffMessage++;
-                userData.staffPoint += 1 / 3000;
-                userData.lastUpdated = Date.now();
-                await userData.save();
             }
-        } else if (
-            member.roles.cache.some((role) => role.id === client.eventRole)
-        ) {
-            // Event role only
-            if (eventChats.includes(message.channel.id)) {
-                let userData = await UserMessageCount.findOne({
-                    userId: message.author.id,
-                });
 
-                if (!userData) {
-                    userData = new UserMessageCount({
-                        userId: message.author.id,
-                        eventRole: true,
-                        eventMessage: 0,
-                        eventPoint: 0,
-                        lastUpdated: Date.now(),
-                    });
-                }
-
-                userData.eventMessage++;
-                userData.eventPoint += 1 / 3000;
+            if (awarded.length > 0) {
                 userData.lastUpdated = Date.now();
                 await userData.save();
+
+                // --- Logging to registration log channel ---
+                const logChannel = client.channels.cache.get(
+                    registerationLogChannel
+                );
+                if (logChannel && logChannel.isTextBased()) {
+                    const embed = new EmbedBuilder()
+                        .setTitle("📋 Event Points Logged")
+                        .setColor("White")
+                        .addFields(
+                            {
+                                name: "User",
+                                value: `${author} (${author.id})`,
+                                inline: false,
+                            },
+                            {
+                                name: "Keyword(s)",
+                                value: awarded.map((a) => a.keyword).join(", "),
+                                inline: true,
+                            },
+                            {
+                                name: "Points Awarded",
+                                value: awarded
+                                    .map((a) => a.value.toFixed(4))
+                                    .join(", "),
+                                inline: true,
+                            },
+                            {
+                                name: "Total",
+                                value: awarded
+                                    .reduce((sum, a) => sum + a.value, 0)
+                                    .toFixed(4),
+                                inline: true,
+                            },
+                            {
+                                name: "Updated At",
+                                value: `<t:${Math.floor(
+                                    userData.lastUpdated / 1000
+                                )}:f>`,
+                                inline: false,
+                            }
+                        )
+                        .setFooter({ text: "Registration Activity Tracker" });
+
+                    logChannel.send({ embeds: [embed] }).catch(console.error);
+                }
             }
         }
     },
