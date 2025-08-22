@@ -1,20 +1,36 @@
 const { PermissionsBitField, EmbedBuilder } = require("discord.js");
-const Punishments = require('../../models/Punishments');
-const LogChannel = require('../../models/LogChannel');
+const Punishments = require("../../models/Punishments");
+const LogChannel = require("../../models/LogChannel");
 
 const guildId = "300481238773399553";
 const punishmentRoleId = "1070078397453189161"; // Punishment role to add
 const roleToAddFirst = "1080918072065527828"; // First role to add
 const roleToAddSecond = "1068466065719447562"; // Second role to add
 const rolesToRemove = [
-    "1165209477302198282", "1270778782822957057", "855055867775025152",
-    "1169640736262717471", "1270779316246155316", "327989761677590530",
-    "1169002700281757751", "1270779676729806919", "1068501587846246450",
-    "1169639127789092895", "1270780308341657660", "378659419652751363",
-    "1169283299013820526", "451665764936712192", "1197467231962025984",
-    "460539606971187200", "1213597128841232950", "1183154616465104997",
-    "1063072755802714112", "1213113479599493120", "1119120674087239732",
-    "1262705542972047370", "1270779316246155316", "1213597128841232395"
+    "1165209477302198282",
+    "1270778782822957057",
+    "855055867775025152",
+    "1169640736262717471",
+    "1270779316246155316",
+    "327989761677590530",
+    "1169002700281757751",
+    "1270779676729806919",
+    "1068501587846246450",
+    "1169639127789092895",
+    "1270780308341657660",
+    "378659419652751363",
+    "1169283299013820526",
+    "451665764936712192",
+    "1197467231962025984",
+    "460539606971187200",
+    "1213597128841232950",
+    "1183154616465104997",
+    "1063072755802714112",
+    "1213113479599493120",
+    "1119120674087239732",
+    "1262705542972047370",
+    "1270779316246155316",
+    "1213597128841232395",
 ];
 
 async function schedulePunishmentRemoval(client, member, punishment) {
@@ -27,7 +43,9 @@ async function schedulePunishmentRemoval(client, member, punishment) {
                 await member.roles.remove(punishmentRoleId);
 
                 // Restore all removed roles
-                const rolesToRestoreMembers = punishment.removedRoles.map(roleId => member.guild.roles.cache.get(roleId)).filter(role => role);
+                const rolesToRestoreMembers = punishment.removedRoles
+                    .map((roleId) => member.guild.roles.cache.get(roleId))
+                    .filter((role) => role);
                 for (const role of rolesToRestoreMembers) {
                     await member.roles.add(role);
                 }
@@ -59,11 +77,14 @@ const loadPunishments = async (client) => {
         if (member) {
             const currentTime = Date.now();
             if (currentTime > punishment.endTime) {
-                
-                await member.roles.remove(punishmentRoleId).catch(console.error);
+                await member.roles
+                    .remove(punishmentRoleId)
+                    .catch(console.error);
 
                 // Restore all removed roles
-                const rolesToRestoreMembers = punishment.removedRoles.map(roleId => member.guild.roles.cache.get(roleId)).filter(role => role);
+                const rolesToRestoreMembers = punishment.removedRoles
+                    .map((roleId) => member.guild.roles.cache.get(roleId))
+                    .filter((role) => role);
                 for (const role of rolesToRestoreMembers) {
                     await member.roles.add(role).catch(console.error);
                 }
@@ -71,24 +92,50 @@ const loadPunishments = async (client) => {
                 // Delete the punishment record from the database
                 await Punishments.deleteOne({ userId: member.user.id });
 
-                const logChannelId = await getLogChannelId("300481238773399553");
-            const logChannel = logChannelId ? await client.channels.fetch(logChannelId) : null;
+                const logChannelId = await getLogChannelId(
+                    "300481238773399553"
+                );
+                const logChannel = logChannelId
+                    ? await client.channels.fetch(logChannelId)
+                    : null;
 
-            const removeEmbed = new EmbedBuilder()
-                .setAuthor({ name: "Punishment Ended", iconURL: `${client.user.displayAvatarURL({ dynamic: true })}` })
-                .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-                .addFields(
-                    { name: "Member", value: `<@${member.user.id}>`, inline: true },
-                    { name: "Admin", value: `None`, inline: false },
-                    { name: "Restored Roles", value: rolesToRestoreMembers.map(role => `<@&${role.id}>`).join(", ") || "None", inline: true },
-                    { name: "Reason", value: `\`Punishment Ended\``, inline: true }
-                )
-                .setColor("Green")
-                .setTimestamp();
+                const removeEmbed = new EmbedBuilder()
+                    .setAuthor({
+                        name: "Punishment Ended",
+                        iconURL: `${client.user.displayAvatarURL({
+                            dynamic: true,
+                        })}`,
+                    })
+                    .setThumbnail(
+                        member.user.displayAvatarURL({ dynamic: true })
+                    )
+                    .addFields(
+                        {
+                            name: "Member",
+                            value: `<@${member.user.id}>`,
+                            inline: true,
+                        },
+                        { name: "Admin", value: `None`, inline: false },
+                        {
+                            name: "Restored Roles",
+                            value:
+                                rolesToRestoreMembers
+                                    .map((role) => `<@&${role.id}>`)
+                                    .join(", ") || "None",
+                            inline: true,
+                        },
+                        {
+                            name: "Reason",
+                            value: `\`Punishment Ended\``,
+                            inline: true,
+                        }
+                    )
+                    .setColor("Green")
+                    .setTimestamp();
 
-            if (logChannel) {
-                await logChannel.send({ embeds: [removeEmbed] });
-            }
+                if (logChannel) {
+                    await logChannel.send({ embeds: [removeEmbed] });
+                }
             } else {
                 // If punishment is still active, add the punishment role
                 await member.roles.add(punishmentRoleId).catch(console.error);
@@ -118,21 +165,21 @@ module.exports = {
                         name: "member",
                         type: 6,
                         description: "Select the staff member",
-                        required: true
+                        required: true,
                     },
                     {
                         name: "duration",
                         type: 4,
                         description: "Duration in days (1-30)",
-                        required: true
+                        required: true,
                     },
                     {
                         name: "reason",
                         type: 3,
                         description: "Reason for the punishment",
-                        required: false
+                        required: false,
                     },
-                ]
+                ],
             },
             {
                 name: "remove",
@@ -143,30 +190,36 @@ module.exports = {
                         name: "member",
                         type: 6,
                         description: "Select the staff member",
-                        required: true
+                        required: true,
                     },
                     {
                         name: "reason",
                         type: 3,
                         description: "Reason for the removal",
-                        required: false
-                    }
-                ]
+                        required: false,
+                    },
+                ],
             },
             {
                 name: "list",
                 type: 1,
-                description: "View list of active punishments"
-            }
-        ]
+                description: "View list of active punishments",
+            },
+        ],
     },
     devOnly: false,
     usrPerms: [PermissionsBitField.Flags.Administrator],
     botPerms: [PermissionsBitField.Flags.ManageRoles],
     cooldown: "5s",
     async execute(client, interaction) {
-        if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-            return interaction.editReply("> :x: You don't have permission to use this command!");
+        if (
+            !interaction.member.permissions.has(
+                PermissionsBitField.Flags.Administrator
+            )
+        ) {
+            return interaction.editReply(
+                "> :x: You don't have permission to use this command!"
+            );
         }
 
         const subcommand = interaction.options.getSubcommand();
@@ -177,20 +230,34 @@ module.exports = {
             const reason = interaction.options.getString("reason");
 
             if (duration < 1 || duration > 30) {
-                return interaction.editReply("> :x: Please provide a valid duration (1-30 days)!");
+                return interaction.editReply(
+                    "> :x: Please provide a valid duration (1-30 days)!"
+                );
             }
 
             // Check if the member is a staff member
-            if (!member.roles.cache.some(role => role.id === client.staffRole || Punishments.findOne({ userId: member.user.id }))) {
-                return interaction.editReply("> :x: The selected member is not a staff member!");
+            if (
+                !member.roles.cache.some(
+                    (role) =>
+                        role.id === client.staffRole ||
+                        Punishments.findOne({ userId: member.user.id })
+                )
+            ) {
+                return interaction.editReply(
+                    "> :x: The selected member is not a staff member!"
+                );
             }
 
             // Fetch roles to remove based on predefined roles
             const rolesToRemoveIds = rolesToRemove.map(String);
-            const rolesRemoved = member.roles.cache.filter(role => rolesToRemoveIds.includes(role.id));
+            const rolesRemoved = member.roles.cache.filter((role) =>
+                rolesToRemoveIds.includes(role.id)
+            );
 
             // Check if the user already has a punishment
-            const existingPunishment = await Punishments.findOne({ userId: member.user.id });
+            const existingPunishment = await Punishments.findOne({
+                userId: member.user.id,
+            });
             const removedRolesArray = [];
 
             // If there's an existing punishment, skip roles already recorded
@@ -213,7 +280,9 @@ module.exports = {
             // Add the punishment role
             await member.roles.add(punishmentRoleId).catch(console.error);
 
-            const firstRoleAdded = existingPunishment ? existingPunishment.firstRoleAdded : false;
+            const firstRoleAdded = existingPunishment
+                ? existingPunishment.firstRoleAdded
+                : false;
 
             // Manage the roles based on existing data
             if (firstRoleAdded) {
@@ -228,7 +297,10 @@ module.exports = {
                 duration: duration,
                 reason: reason,
                 adminId: interaction.user.id,
-                removedRoles: [...(existingPunishment?.removedRoles || []), ...removedRolesArray],
+                removedRoles: [
+                    ...(existingPunishment?.removedRoles || []),
+                    ...removedRolesArray,
+                ],
                 endTime: Date.now() + duration * 24 * 60 * 60 * 1000,
                 firstRoleAdded: !firstRoleAdded,
             };
@@ -241,16 +313,42 @@ module.exports = {
 
             // Log punishment details in the punishment channel
             const logChannelId = await getLogChannelId(interaction.guild.id);
-            const logChannel = logChannelId ? await client.channels.fetch(logChannelId) : null;
+            const logChannel = logChannelId
+                ? await client.channels.fetch(logChannelId)
+                : null;
 
             const addEmbed = new EmbedBuilder()
-                .setAuthor({ name: "Punishment Added", iconURL: `${client.user.displayAvatarURL({ dynamic: true })}` })
+                .setAuthor({
+                    name: "Punishment Added",
+                    iconURL: `${client.user.displayAvatarURL({
+                        dynamic: true,
+                    })}`,
+                })
                 .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
                 .addFields(
-                    { name: "Member", value: `<@${member.user.id}>`, inline: true },
-                    { name: "Admin", value: `<@${interaction.user.id}>`, inline: true },
-                    { name: "Duration", value: `${duration} days`, inline: true },
-                    { name: "Removed Roles", value: rolesRemoved.map(role => `<@&${role.id}>`).join(", ") || "None", inline: false },
+                    {
+                        name: "Member",
+                        value: `<@${member.user.id}>`,
+                        inline: true,
+                    },
+                    {
+                        name: "Admin",
+                        value: `<@${interaction.user.id}>`,
+                        inline: true,
+                    },
+                    {
+                        name: "Duration",
+                        value: `${duration} days`,
+                        inline: true,
+                    },
+                    {
+                        name: "Removed Roles",
+                        value:
+                            rolesRemoved
+                                .map((role) => `<@&${role.id}>`)
+                                .join(", ") || "None",
+                        inline: false,
+                    },
                     { name: "Reason", value: `\`${reason}\``, inline: true }
                 )
                 .setColor("Red")
@@ -263,11 +361,17 @@ module.exports = {
             // Schedule punishment removal if it's within the duration
             schedulePunishmentRemoval(client, member, punishmentData);
 
-            return interaction.editReply(`> ✅ Successfully punished <@${member.user.id}> for ${duration} days. Reason: \`${reason}\``);
+            return interaction.editReply(
+                `> ✅ Successfully punished <@${member.user.id}> for ${duration} days. Reason: \`${reason}\``
+            );
         } else if (subcommand === "remove") {
-            const punishmentRecord = await Punishments.findOne({ userId: member.user.id });
+            const punishmentRecord = await Punishments.findOne({
+                userId: member.user.id,
+            });
             if (!punishmentRecord) {
-                return interaction.editReply("> :x: This member does not have an active punishment.");
+                return interaction.editReply(
+                    "> :x: This member does not have an active punishment."
+                );
             }
 
             const reason = interaction.options.getString("reason");
@@ -276,21 +380,45 @@ module.exports = {
             await member.roles.remove(punishmentRoleId).catch(console.error);
 
             // Restore all removed roles
-            const rolesToRestoreMembers = punishmentRecord.removedRoles.map(roleId => member.guild.roles.cache.get(roleId)).filter(role => role);
+            const rolesToRestoreMembers = punishmentRecord.removedRoles
+                .map((roleId) => member.guild.roles.cache.get(roleId))
+                .filter((role) => role);
             for (const role of rolesToRestoreMembers) {
                 await member.roles.add(role).catch(console.error);
             }
 
             const logChannelId = await getLogChannelId(interaction.guild.id);
-            const logChannel = logChannelId ? await client.channels.fetch(logChannelId) : null;
+            const logChannel = logChannelId
+                ? await client.channels.fetch(logChannelId)
+                : null;
 
             const removeEmbed = new EmbedBuilder()
-                .setAuthor({ name: "Punishment Removed", iconURL: `${client.user.displayAvatarURL({ dynamic: true })}` })
+                .setAuthor({
+                    name: "Punishment Removed",
+                    iconURL: `${client.user.displayAvatarURL({
+                        dynamic: true,
+                    })}`,
+                })
                 .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
                 .addFields(
-                    { name: "Member", value: `<@${member.user.id}>`, inline: true },
-                    { name: "Admin", value: `<@${interaction.user.id}>`, inline: false },
-                    { name: "Restored Roles", value: rolesToRestoreMembers.map(role => `<@&${role.id}>`).join(", ") || "None", inline: true },
+                    {
+                        name: "Member",
+                        value: `<@${member.user.id}>`,
+                        inline: true,
+                    },
+                    {
+                        name: "Admin",
+                        value: `<@${interaction.user.id}>`,
+                        inline: false,
+                    },
+                    {
+                        name: "Restored Roles",
+                        value:
+                            rolesToRestoreMembers
+                                .map((role) => `<@&${role.id}>`)
+                                .join(", ") || "None",
+                        inline: true,
+                    },
                     { name: "Reason", value: `\`${reason}\``, inline: true }
                 )
                 .setColor("Green")
@@ -302,49 +430,80 @@ module.exports = {
 
             await Punishments.deleteOne({ userId: member.user.id });
 
-            return interaction.editReply(`> ✅ Successfully removed punishment from <@${member.user.id}>. Reason: \`${reason}\``);
+            return interaction.editReply(
+                `> ✅ Successfully removed punishment from <@${member.user.id}>. Reason: \`${reason}\``
+            );
         } else if (subcommand === "list") {
             const punishments = await Punishments.find();
             if (punishments.length === 0) {
-                return interaction.editReply("> :x: There are no active punishments!");
+                return interaction.editReply(
+                    "> :x: There are no active punishments!"
+                );
             } else if (punishments.length > 0) {
                 const embed = new EmbedBuilder()
                     .setAuthor({
                         name: "Punishments List",
-                        iconURL: `${client.user.displayAvatarURL({ dynamic: true })}`
+                        iconURL: `${client.user.displayAvatarURL({
+                            dynamic: true,
+                        })}`,
                     })
                     .setColor("Red")
-                    .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: `${interaction.user.displayAvatarURL({ dynamic: true })}` })
-                    .setThumbnail(interaction.guild.iconURL({ dynamic: true, size: 1024 }))
+                    .setFooter({
+                        text: `Requested by ${interaction.user.username}`,
+                        iconURL: `${interaction.user.displayAvatarURL({
+                            dynamic: true,
+                        })}`,
+                    })
+                    .setThumbnail(
+                        interaction.guild.iconURL({ dynamic: true, size: 1024 })
+                    )
                     .setTimestamp();
-        
-                punishments.forEach(punishment => {
-                    const member = interaction.guild.members.cache.get(punishment.userId);
-        
+
+                punishments.forEach((punishment) => {
+                    const member = interaction.guild.members.cache.get(
+                        punishment.userId
+                    );
+
                     const remainingMillis = punishment.endTime - Date.now();
-                    const days = Math.floor(remainingMillis / (24 * 60 * 60 * 1000));
-                    const hours = Math.floor((remainingMillis % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-                    const minutes = Math.floor((remainingMillis % (60 * 60 * 1000)) / (60 * 1000));
-                    const seconds = Math.floor((remainingMillis % (60 * 1000)) / 1000);
-        
+                    const days = Math.floor(
+                        remainingMillis / (24 * 60 * 60 * 1000)
+                    );
+                    const hours = Math.floor(
+                        (remainingMillis % (24 * 60 * 60 * 1000)) /
+                            (60 * 60 * 1000)
+                    );
+                    const minutes = Math.floor(
+                        (remainingMillis % (60 * 60 * 1000)) / (60 * 1000)
+                    );
+                    const seconds = Math.floor(
+                        (remainingMillis % (60 * 1000)) / 1000
+                    );
+
                     const remainingTime =
                         remainingMillis > 0
-                            ? `${days > 0 ? `${days} days ` : ""}${hours > 0 ? `${hours} hours ` : ""}${minutes > 0 ? `${minutes} minutes ` : ""}${seconds > 0 ? `${seconds} seconds` : ""}`
+                            ? `${days > 0 ? `${days} days ` : ""}${
+                                  hours > 0 ? `${hours} hours ` : ""
+                              }${minutes > 0 ? `${minutes} minutes ` : ""}${
+                                  seconds > 0 ? `${seconds} seconds` : ""
+                              }`
                             : "Expired";
-        
+
                     embed.addFields({
-                        name: `${member ? member.user.username : "Unknown User"}`,
+                        name: `${
+                            member ? member.user.username : "Unknown User"
+                        }`,
                         value: `**Remaining:** ${remainingTime}\n**Ends:** <t:${Math.floor(
                             punishment.endTime / 1000
-                        )}:F>\n **ID:** \`${member.user.id}\` \n Reason: \`${punishment.reason}\``,
-                        inline: false
+                        )}:F>\n **ID:** \`${member.user.id}\` \n Reason: \`${
+                            punishment.reason
+                        }\``,
+                        inline: false,
                     });
                 });
-        
+
                 return interaction.editReply({ embeds: [embed] });
             }
-        }            
-        
+        }
     },
     loadPunishments,
 };
