@@ -82,52 +82,92 @@ module.exports = {
         const addToAll = interaction.options.getBoolean("all");
         const targetRole = interaction.options.getRole("target_role");
 
-        if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
-            return interaction.editReply("> :x: You don't have permission to use this command!");
+        if (
+            !interaction.member.permissions.has(
+                PermissionsBitField.Flags.ManageRoles
+            )
+        ) {
+            return interaction.editReply(
+                "> :x: You don't have permission to use this command!"
+            );
         }
 
         const botMember = interaction.guild.members.me;
         if (!botMember.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
-            return interaction.editReply("> :x: I don't have permission to manage roles! Please check my permissions.");
+            return interaction.editReply(
+                "> :x: I don't have permission to manage roles! Please check my permissions."
+            );
         }
 
         // Check for required choices and mutual exclusivity
-        const choicesCount = [target, addToAll, targetRole].filter(Boolean).length;
+        const choicesCount = [target, addToAll, targetRole].filter(
+            Boolean
+        ).length;
         if (choicesCount !== 1) {
-            return interaction.editReply("> :x: You must choose exactly one option: a specific member, 'all', or a target role!");
+            return interaction.editReply(
+                "> :x: You must choose exactly one option: a specific member, 'all', or a target role!"
+            );
         }
 
         if (target) {
             // Handle specific member
             if (group === "add") {
-                if (interaction.user.id !== interaction.guild.ownerId && role.comparePositionTo(target.roles.highest) > 0) {
-                    return interaction.editReply(`> You must have the \`@${role.name}\` role or higher to perform this action!`);
+                if (
+                    interaction.user.id !== interaction.guild.ownerId &&
+                    role.comparePositionTo(target.roles.highest) > 0
+                ) {
+                    return interaction.editReply(
+                        `> You must have the \`@${role.name}\` role or higher to perform this action!`
+                    );
                 }
 
                 if (target.roles.cache.has(role.id)) {
-                    return await interaction.editReply({ content: `> ${target.user} already has \`@${role.name}\`!` });
+                    return await interaction.editReply({
+                        content: `> ${target.user} already has \`@${role.name}\`!`,
+                    });
                 }
 
-                await target.roles.add(role).then(async () => {
-                    await interaction.editReply({ content: `> Successfully added \`@${role.name}\` to ${target.user}!` });
-                }).catch(async err => {
-                    return await interaction.editReply({ content: `> I can't add \`@${role.name}\` to ${target.user}!` });
-                });
-
+                await target.roles
+                    .add(role)
+                    .then(async () => {
+                        await interaction.editReply({
+                            content: `> Successfully added \`@${role.name}\` to ${target.user}!`,
+                        });
+                    })
+                    .catch(async (err) => {
+                        return await interaction.editReply({
+                            content: `> I can't add \`@${role.name}\` to ${target.user}!`,
+                        });
+                    });
             } else if (group === "remove") {
-                if (interaction.user.id !== interaction.guild.ownerId && role.comparePositionTo(interaction.member.roles.highest) >= 0) {
-                    return interaction.editReply(`> You must have a higher role than \`@${role.name}\` to perform this action!`);
+                if (
+                    interaction.user.id !== interaction.guild.ownerId &&
+                    role.comparePositionTo(interaction.member.roles.highest) >=
+                        0
+                ) {
+                    return interaction.editReply(
+                        `> You must have a higher role than \`@${role.name}\` to perform this action!`
+                    );
                 }
 
                 if (!target.roles.cache.has(role.id)) {
-                    return await interaction.editReply({ content: `> ${target.user} doesn't have \`@${role.name}\`!` });
+                    return await interaction.editReply({
+                        content: `> ${target.user} doesn't have \`@${role.name}\`!`,
+                    });
                 }
 
-                await target.roles.remove(role).then(async () => {
-                    await interaction.editReply({ content: `> Successfully removed \`@${role.name}\` from ${target.user}` });
-                }).catch(async err => {
-                    return await interaction.editReply({ content: `> I can't remove \`@${role.name}\` from ${target.user}!` });
-                });
+                await target.roles
+                    .remove(role)
+                    .then(async () => {
+                        await interaction.editReply({
+                            content: `> Successfully removed \`@${role.name}\` from ${target.user}`,
+                        });
+                    })
+                    .catch(async (err) => {
+                        return await interaction.editReply({
+                            content: `> I can't remove \`@${role.name}\` from ${target.user}!`,
+                        });
+                    });
             }
         } else if (addToAll) {
             // Handle adding/removing role from all members
@@ -136,38 +176,56 @@ module.exports = {
             if (group === "add") {
                 for (const member of members.values()) {
                     if (!member.roles.cache.has(role.id)) {
-                        await member.roles.add(role).catch(err => console.error(err));
+                        await member.roles
+                            .add(role)
+                            .catch((err) => console.error(err));
                     }
                 }
-                return await interaction.editReply({ content: `> Successfully added \`@${role.name}\` to all members!` });
+                return await interaction.editReply({
+                    content: `> Successfully added \`@${role.name}\` to all members!`,
+                });
             } else if (group === "remove") {
                 for (const member of members.values()) {
                     if (member.roles.cache.has(role.id)) {
-                        await member.roles.remove(role).catch(err => console.error(err));
+                        await member.roles
+                            .remove(role)
+                            .catch((err) => console.error(err));
                     }
                 }
-                return await interaction.editReply({ content: `> Successfully removed \`@${role.name}\` from all members!` });
+                return await interaction.editReply({
+                    content: `> Successfully removed \`@${role.name}\` from all members!`,
+                });
             }
         } else if (targetRole) {
             // Handle adding/removing role based on target role
             const members = await interaction.guild.members.fetch();
-            const membersWithTargetRole = members.filter(member => member.roles.cache.has(targetRole.id));
+            const membersWithTargetRole = members.filter((member) =>
+                member.roles.cache.has(targetRole.id)
+            );
 
             if (group === "add") {
                 for (const member of membersWithTargetRole.values()) {
                     if (!member.roles.cache.has(role.id)) {
-                        await member.roles.add(role).catch(err => console.error(err));
+                        await member.roles
+                            .add(role)
+                            .catch((err) => console.error(err));
                     }
                 }
-                return await interaction.editReply({ content: `> Successfully added \`@${role.name}\` to all members with \`@${targetRole.name}\`!` });
+                return await interaction.editReply({
+                    content: `> Successfully added \`@${role.name}\` to all members with \`@${targetRole.name}\`!`,
+                });
             } else if (group === "remove") {
                 for (const member of membersWithTargetRole.values()) {
                     if (member.roles.cache.has(role.id)) {
-                        await member.roles.remove(role).catch(err => console.error(err));
+                        await member.roles
+                            .remove(role)
+                            .catch((err) => console.error(err));
                     }
                 }
-                return await interaction.editReply({ content: `> Successfully removed \`@${role.name}\` from all members with \`@${targetRole.name}\`!` });
+                return await interaction.editReply({
+                    content: `> Successfully removed \`@${role.name}\` from all members with \`@${targetRole.name}\`!`,
+                });
             }
         }
-    }
+    },
 };

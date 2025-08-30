@@ -6,14 +6,12 @@ const {
     Options,
     PermissionsBitField,
     PresenceUpdateStatus,
+    Partials,
 } = require("discord.js");
+
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMessages,
-    ],
+    intents: Object.values(GatewayIntentBits),
+    partials: Object.values(Partials),
     allowedMentions: { repliedUser: false },
     fetchAllMembers: true,
 });
