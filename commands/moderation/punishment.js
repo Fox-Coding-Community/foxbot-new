@@ -31,6 +31,7 @@ const rolesToRemove = [
     "1262705542972047370",
     "1270779316246155316",
     "1213597128841232395",
+    "1380170344211550238",
 ];
 
 async function schedulePunishmentRemoval(client, member, punishment) {
